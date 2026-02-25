@@ -1,21 +1,23 @@
 package org.example.tests;
 
 import io.restassured.response.Response;
+import org.example.client.OrderClient;
 import org.example.model.Order;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.notNullValue;
 
 @RunWith(Parameterized.class)
 public class OrderTest extends BaseTest {
 
     private final List<String> color;
+    private final OrderClient orderClient = new OrderClient();
 
     public OrderTest(List<String> color) {
         this.color = color;
@@ -33,7 +35,6 @@ public class OrderTest extends BaseTest {
 
     @Test
     public void createOrderWithDifferentColors() {
-
         Order order = new Order(
                 "Naruto",
                 "Uchiha",
@@ -46,11 +47,7 @@ public class OrderTest extends BaseTest {
                 color
         );
 
-        Response response =
-                given()
-                        .contentType("application/json")
-                        .body(order)
-                        .post("/api/v1/orders");
+        Response response = orderClient.createOrder(order);
 
         response.then()
                 .statusCode(201)
@@ -59,9 +56,7 @@ public class OrderTest extends BaseTest {
 
     @Test
     public void getOrdersListReturnsOrders() {
-
-        given()
-                .get("/api/v1/orders")
+        orderClient.getOrdersList()
                 .then()
                 .statusCode(200)
                 .body("orders", notNullValue());
