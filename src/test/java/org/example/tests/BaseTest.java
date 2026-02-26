@@ -1,19 +1,21 @@
 package org.example.tests;
 
 import io.restassured.RestAssured;
+import io.restassured.response.Response;
 import org.example.client.CourierClient;
+import org.example.model.Courier;
+import org.example.model.CourierCredentials;
 import org.junit.After;
 import org.junit.Before;
-import java.util.ArrayList;
-import java.util.List;
 
-import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.is;
 
 public class BaseTest {
 
-    private final List<Integer> couriersToDelete = new ArrayList<>();
     protected final CourierClient courierClient = new CourierClient();
+
+    protected String createdCourierLogin;
+    protected String createdCourierPassword;
 
     @Before
     public void setUp() {
@@ -21,26 +23,44 @@ public class BaseTest {
     }
 
     protected String randomLogin() {
-        return "login_" + (int) (Math.random() * 100000);
+        return "login_" + System.currentTimeMillis();
     }
 
     protected String randomPassword() {
-        return "pass_" + (int) (Math.random() * 100000);
+        return "pass_" + System.currentTimeMillis();
     }
 
-    protected void rememberCourierIdForDeletion(Integer id) {
-        if (id != null) {
-            couriersToDelete.add(id);
-        }
+    protected void createCourierBeforeTest() {
+        createdCourierLogin = randomLogin();
+        createdCourierPassword = randomPassword();
+
+        Courier courier = new Courier(createdCourierLogin, createdCourierPassword, "Friend");
+
+        courierClient.createCourier(courier)
+                .then()
+                .statusCode(201)
+                .body("ok", is(true));
     }
 
     @After
-    public void deleteAllCreatedCouriers() {
-        for (Integer id : couriersToDelete) {
-            courierClient.deleteCourier(id)
-                    .then()
-                    .statusCode(anyOf(is(200), is(404)));
+    public void deleteCreatedCourier() {
+        if (createdCourierLogin == null || createdCourierPassword == null) return;
+
+        Response loginResponse = courierClient.login(
+                new CourierCredentials(createdCourierLogin, createdCourierPassword)
+        );
+
+        if (loginResponse.getStatusCode() == 200) {
+            Integer id = loginResponse.then().extract().path("id");
+
+            if (id != null) {
+                courierClient.deleteCourier(id)
+                        .then()
+                        .statusCode(200);
+            }
         }
-        couriersToDelete.clear();
+
+        createdCourierLogin = null;
+        createdCourierPassword = null;
     }
 }

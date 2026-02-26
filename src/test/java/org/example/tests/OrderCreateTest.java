@@ -14,12 +14,12 @@ import java.util.List;
 import static org.hamcrest.Matchers.notNullValue;
 
 @RunWith(Parameterized.class)
-public class OrderTest extends BaseTest {
+public class OrderCreateTest extends BaseTest {
 
     private final List<String> color;
     private final OrderClient orderClient = new OrderClient();
 
-    public OrderTest(List<String> color) {
+    public OrderCreateTest(List<String> color) {
         this.color = color;
     }
 
@@ -52,13 +52,5 @@ public class OrderTest extends BaseTest {
         response.then()
                 .statusCode(201)
                 .body("track", notNullValue());
-    }
-
-    @Test
-    public void getOrdersListReturnsOrders() {
-        orderClient.getOrdersList()
-                .then()
-                .statusCode(200)
-                .body("orders", notNullValue());
     }
 }
